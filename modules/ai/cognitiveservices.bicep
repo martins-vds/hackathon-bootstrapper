@@ -2,11 +2,6 @@ param name string
 param location string = resourceGroup().location
 param tags object = {}
 param autoScaleEnabled bool = false
-param privateEndpointSubnetId string = ''
-param privateEndpointLocation string = location
-param linkPrivateEndpointToPrivateDns bool = true
-param privateDnsZoneResourceGroup string
-
 param customSubDomainName string = name
 param deployments array = []
 
@@ -55,7 +50,7 @@ param kind string = 'OpenAI'
   'Enabled'
   'Disabled'
 ])
-param publicNetworkAccess string = 'Disabled'
+param publicNetworkAccess string = 'Enabled'
 param sku object = {
   name: 'S0'
 }
@@ -72,7 +67,7 @@ resource account 'Microsoft.CognitiveServices/accounts@2024-04-01-preview' = {
     customSubDomainName: customSubDomainName
     publicNetworkAccess: publicNetworkAccess
     networkAcls: {
-      defaultAction: 'Deny'
+      defaultAction: publicNetworkAccess == 'Enabled' ? 'Allow' : 'Deny'
     }
     restrictOutboundNetworkAccess: false
     dynamicThrottlingEnabled: kind == 'OpenAI' ? false : autoScaleEnabled
@@ -95,52 +90,6 @@ resource deployment 'Microsoft.CognitiveServices/accounts/deployments@2024-04-01
     }
   }
 ]
-
-resource privateEndpoint 'Microsoft.Network/privateEndpoints@2024-01-01' = if (!empty(privateEndpointSubnetId)) {
-  name: '${account.name}-endpoint'
-  location: privateEndpointLocation
-  tags: tags
-  properties: {
-    subnet: {
-      id: privateEndpointSubnetId
-      properties: {}
-    }
-    privateLinkServiceConnections: [
-      {
-        name: '${account.name}-connection'
-        properties: {
-          privateLinkServiceId: account.id
-          groupIds: [
-            'account'
-          ]
-        }
-      }
-    ]
-  }
-
-  resource link 'privateDnsZoneGroups' = if (linkPrivateEndpointToPrivateDns) {
-    name: 'default'
-    properties: {
-      privateDnsZoneConfigs: [
-        {
-          name: 'config'
-          properties: {
-            privateDnsZoneId: privateDnsZone.id
-          }
-        }
-      ]
-    }
-  }
-
-  dependsOn: [
-    deployment
-  ]
-}
-
-resource privateDnsZone 'Microsoft.Network/privateDnsZones@2024-06-01' existing = if (linkPrivateEndpointToPrivateDns) {
-  scope: resourceGroup(privateDnsZoneResourceGroup)
-  name: kind == 'OpenAI' ? 'privatelink.openai.azure.com' : 'privatelink.cognitiveservices.azure.com'
-}
 
 module accountKey '../security/vault-secret.bicep' = {
   name: 'accountKeySecret-${account.name}'
