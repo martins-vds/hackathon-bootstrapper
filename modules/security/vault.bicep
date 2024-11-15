@@ -12,7 +12,7 @@ param location string = resourceGroup().location
 
 @allowed([
   'Disabled'
-  'Allowed'
+  'Enabled'
 ])
 param publicNetworkAccess string = 'Disabled'
 
@@ -40,7 +40,7 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
     publicNetworkAccess: publicNetworkAccess
     networkAcls: {
       bypass: 'AzureServices'
-      defaultAction: publicNetworkAccess == 'Allowed' ? 'Allow' : 'Deny'
+      defaultAction: publicNetworkAccess == 'Enabled' ? 'Allow' : 'Deny'
     }
     accessPolicies: [
       for policy in accessPolicies: {
