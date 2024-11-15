@@ -2,9 +2,6 @@ metadata description = 'Creates an Azure Cosmos DB account.'
 param accountName string
 param location string = resourceGroup().location
 param secondaryLocation string = ''
-param privateEndpointSubnetId string
-param linkPrivateEndpointToPrivateDns bool = true
-param privateDnsZoneResourceGroup string
 param tags object = {}
 
 @allowed(['GlobalDocumentDB', 'MongoDB', 'Parse'])
@@ -189,47 +186,6 @@ resource role 'Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignments@2024-05-
     }
   }
 ]
-
-resource privateEndpoint 'Microsoft.Network/privateEndpoints@2024-01-01' = {
-  name: '${cosmos.name}-endpoint'
-  location: location
-  tags: tags
-  properties: {
-    subnet: {
-      id: privateEndpointSubnetId
-    }
-    privateLinkServiceConnections: [
-      {
-        name: '${cosmos.name}-connection'
-        properties: {
-          privateLinkServiceId: cosmos.id
-          groupIds: [
-            'Sql'
-          ]
-        }
-      }
-    ]
-  }
-
-  resource link 'privateDnsZoneGroups' = if (linkPrivateEndpointToPrivateDns) {
-    name: 'default'
-    properties: {
-      privateDnsZoneConfigs: [
-        {
-          name: 'config'
-          properties: {
-            privateDnsZoneId: privateDnsZone.id
-          }
-        }
-      ]
-    }
-  }
-}
-
-resource privateDnsZone 'Microsoft.Network/privateDnsZones@2024-06-01' existing = if (linkPrivateEndpointToPrivateDns) {
-  scope: resourceGroup(privateDnsZoneResourceGroup)
-  name: 'privatelink.documents.azure.com'
-}
 
 module accountKeySecret '../../security/vault-secret.bicep' = {
   name: 'accountKeySecret-${cosmos.name}'
