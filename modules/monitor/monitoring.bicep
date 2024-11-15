@@ -2,10 +2,6 @@ metadata description = 'Creates an Application Insights instance and a Log Analy
 param logAnalyticsName string
 param applicationInsightsName string
 param applicationInsightsDashboardName string = ''
-param privateLinkScopeName string
-param privateEndpointSubnetId string
-param linkPrivateEndpointToPrivateDns bool = true
-param privateDnsZoneResourceGroup string
 param location string = resourceGroup().location
 param tags object = {}
 
@@ -26,19 +22,6 @@ module applicationInsights 'applicationinsights.bicep' = {
     tags: tags
     dashboardName: applicationInsightsDashboardName
     logAnalyticsWorkspaceId: logAnalytics.outputs.id
-  }
-}
-
-module privateLinkScope 'private-link-scope.bicep' = {
-  name: privateLinkScopeName
-  params: {
-    location: location
-    privateDnsZoneResourceGroup: privateDnsZoneResourceGroup 
-    privateEndpointSubnetId: privateEndpointSubnetId
-    privateLinkScopeName: privateLinkScopeName
-    applicationInsightsId: applicationInsights.outputs.id
-    linkPrivateEndpointToPrivateDns: linkPrivateEndpointToPrivateDns
-    tags: tags
   }
 }
 
