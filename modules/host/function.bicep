@@ -34,12 +34,6 @@ param zoneRedundant bool = false
 param runtimeName string = 'python'
 param runtimeVersion string = '3.11'
 
-param inboundSubnetResourceId string
-param outboundSubnetResourceId string
-
-param linkPrivateEndpointToPrivateDns bool = true
-param privateDnsZoneResourceGroup string
-
 @allowed(['Y1', 'EP3'])
 param sku string = 'EP3'
 
@@ -53,19 +47,9 @@ module storageAccount '../storage/storage-account.bicep' = {
     location: location
     tags: tags
     name: storageAccountName
-    privateEndpointSubnetId: inboundSubnetResourceId
-    linkPrivateEndpointToPrivateDns: linkPrivateEndpointToPrivateDns
-    privateDnsZoneResourceGroup: privateDnsZoneResourceGroup
     shares: [
       {
         name: functionContentShareName
-      }
-    ]
-    virtualNetworkRules: [
-      {
-        id: outboundSubnetResourceId
-        action: 'Allow'
-        state: 'Succeeded'
       }
     ]
   }
@@ -93,10 +77,6 @@ module functionApp './appservice.bicep' = {
     appSettings: union(appSettings, {
       WEBSITE_CONTENTSHARE: functionContentShareName
     })
-    inboundSubnetResourceId: inboundSubnetResourceId
-    outboundSubnetResourceId: outboundSubnetResourceId
-    linkPrivateEndpointToPrivateDns: linkPrivateEndpointToPrivateDns
-    privateDnsZoneResourceGroup: privateDnsZoneResourceGroup
     applicationInsightsName: applicationInsightsName
     storageAccountName: storageAccount.outputs.name
     zoneRedundant: zoneRedundant

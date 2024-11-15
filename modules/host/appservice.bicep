@@ -64,17 +64,13 @@ param use32BitWorkerProcess bool = false
 param runFromPackage bool = false
 param ftpsState string = 'FtpsOnly'
 param healthCheckPath string = ''
-param inboundSubnetResourceId string
-param outboundSubnetResourceId string
 param storageAccountName string = ''
 param zoneRedundant bool = false
-param linkPrivateEndpointToPrivateDns bool = true
-param privateDnsZoneResourceGroup string
 @allowed([
   'Enabled'
   'Disabled'
 ])
-param publicNetworkAccess string = 'Disabled'
+param publicNetworkAccess string = 'Enabled'
 
 @allowed([
   'B1'
@@ -117,7 +113,7 @@ var logCategories = contains(kind, 'functionapp') ? functionAppLogCategories : a
 
 var diagSettings = map(logCategories, log => {
   enabled: true
-  category: log  
+  category: log
 })
 
 resource userIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' existing = if (!empty(identityName)) {
@@ -158,7 +154,6 @@ resource appService 'Microsoft.Web/sites@2023-12-01' = {
   }
   properties: {
     serverFarmId: useExistingAppServicePlan ? existingAppServicePlan.id : appServicePlan.id
-    virtualNetworkSubnetId: outboundSubnetResourceId
     reserved: kind == 'functionapp,linux'
     vnetRouteAllEnabled: true
     vnetContentShareEnabled: true
@@ -203,7 +198,7 @@ resource appService 'Microsoft.Web/sites@2023-12-01' = {
         : {},
       !empty(keyVaultName) ? { AZURE_KEY_VAULT_ENDPOINT: keyVault.properties.vaultUri } : {},
       !empty(authClientSecret) ? { AUTH_CLIENT_SECRET: authClientSecret } : {},
-      kind == 'functionapp,linux'
+      kind == 'functionapp,linux' && !empty(storageAccountName)
         ? {
             FUNCTIONS_EXTENSION_VERSION: '~4'
             AzureWebJobsStorage: 'DefaultEndpointsProtocol=https;AccountName=${storageAccountName};AccountKey=${storageAccount.listkeys().keys[0].value}'
@@ -282,14 +277,6 @@ resource appService 'Microsoft.Web/sites@2023-12-01' = {
       }
     }
   }
-
-  resource networkConfig 'networkConfig' = if (kind == 'functionapp,linux') {
-    name: 'virtualNetwork'
-    properties: {
-      subnetResourceId: outboundSubnetResourceId
-      swiftSupported: true
-    }
-  }
 }
 
 resource diagnosticsSettings 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = if (!empty(applicationInsightsName)) {
@@ -297,11 +284,11 @@ resource diagnosticsSettings 'Microsoft.Insights/diagnosticSettings@2021-05-01-p
   scope: appService
   properties: {
     workspaceId: applicationInsights.properties.WorkspaceResourceId
-    logs: diagSettings    
+    logs: diagSettings
   }
 }
 
-resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' existing = {
+resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' existing = if (!empty(storageAccountName)) {
   name: storageAccountName
 }
 
@@ -311,47 +298,6 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' existing = if (!(empty(
 
 resource applicationInsights 'Microsoft.Insights/components@2020-02-02' existing = if (!empty(applicationInsightsName)) {
   name: applicationInsightsName
-}
-
-resource privateEndpoint 'Microsoft.Network/privateEndpoints@2024-01-01' = {
-  name: '${appService.name}-endpoint'
-  location: location
-  tags: tags
-  properties: {
-    subnet: {
-      id: inboundSubnetResourceId
-    }
-    privateLinkServiceConnections: [
-      {
-        name: '${appService.name}-connection'
-        properties: {
-          privateLinkServiceId: appService.id
-          groupIds: [
-            'sites'
-          ]
-        }
-      }
-    ]
-  }
-
-  resource link 'privateDnsZoneGroups' = if (linkPrivateEndpointToPrivateDns) {
-    name: 'default'
-    properties: {
-      privateDnsZoneConfigs: [
-        {
-          name: 'config'
-          properties: {
-            privateDnsZoneId: privateDnsZone.id
-          }
-        }
-      ]
-    }
-  }
-}
-
-resource privateDnsZone 'Microsoft.Network/privateDnsZones@2024-06-01' existing = if (linkPrivateEndpointToPrivateDns) {
-  scope: resourceGroup(privateDnsZoneResourceGroup)
-  name: 'privatelink.azurewebsites.net'
 }
 
 module registryAccess '../security/registry-access.bicep' = if (!empty(containerRegistryName) && identityType != 'None') {
