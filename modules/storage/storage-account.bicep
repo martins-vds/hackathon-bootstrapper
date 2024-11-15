@@ -14,7 +14,7 @@ param dnsEndpointType string = 'Standard'
 param kind string = 'StorageV2'
 param minimumTlsVersion string = 'TLS1_2'
 @allowed(['Enabled', 'Disabled'])
-param publicNetworkAccess string = 'Disabled'
+param publicNetworkAccess string = 'Enabled'
 param sku object = { name: 'Standard_LRS' }
 param containers array = []
 param shares array = []
@@ -40,7 +40,7 @@ resource storage 'Microsoft.Storage/storageAccounts@2023-05-01' = {
     networkAcls: {
       bypass: 'AzureServices'
       virtualNetworkRules: virtualNetworkRules
-      defaultAction: 'Deny'
+      defaultAction: publicNetworkAccess == 'Enabled' ? 'Allow' : 'Deny'
     }
     publicNetworkAccess: empty(virtualNetworkRules) ? publicNetworkAccess : 'Enabled'
   }
@@ -70,7 +70,7 @@ resource storage 'Microsoft.Storage/storageAccounts@2023-05-01' = {
     ]
   }
 
-  resource queueServices 'queueServices' = if (!empty(queues)){
+  resource queueServices 'queueServices' = if (!empty(queues)) {
     name: 'default'
 
     resource queue 'queues' = [
@@ -81,7 +81,7 @@ resource storage 'Microsoft.Storage/storageAccounts@2023-05-01' = {
   }
 }
 
-module connectionStringSecret '../security/vault-secret.bicep' = if(!empty(keyVaultName)) {
+module connectionStringSecret '../security/vault-secret.bicep' = if (!empty(keyVaultName)) {
   name: '${storage.name}-cs-secret'
   params: {
     keyVaultName: keyVaultName
