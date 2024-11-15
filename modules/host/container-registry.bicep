@@ -1,10 +1,10 @@
 metadata description = 'Creates an Azure Container Registry.'
 param name string
-param location string
+param location string = resourceGroup().location
 param tags object = {}
 
 @description('Indicates whether admin user is enabled')
-param adminUserEnabled bool = false
+param adminUserEnabled bool = true
 
 @description('Indicates whether anonymous pull is enabled')
 param anonymousPullEnabled bool = false
@@ -21,6 +21,10 @@ param encryption object = {
 param networkRuleBypassOptions string = 'AzureServices'
 
 @description('Public network access setting')
+@allowed([
+  'Disabled'
+  'Enabled'
+])
 param publicNetworkAccess string = 'Enabled'
 
 @description('SKU settings')
@@ -38,10 +42,6 @@ param zoneRedundancy string = 'Disabled'
 @description('The log analytics workspace ID used for logging and monitoring')
 param workspaceId string = ''
 
-param privateEndpointSubnetId string
-param linkPrivateEndpointToPrivateDns bool = true
-param privateDnsZoneResourceGroup string
-
 // 2023-01-01-preview needed for anonymousPullEnabled
 resource containerRegistry 'Microsoft.ContainerRegistry/registries@2023-11-01-preview' = {
   name: name
@@ -57,7 +57,7 @@ resource containerRegistry 'Microsoft.ContainerRegistry/registries@2023-11-01-pr
     publicNetworkAccess: publicNetworkAccess
     zoneRedundancy: zoneRedundancy
     networkRuleSet: {
-      defaultAction: 'Deny'
+      defaultAction: publicNetworkAccess == 'Enabled' ? 'Allow' : 'Deny'
     }
   }
 }
@@ -88,47 +88,6 @@ resource diagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' 
       }
     ]
   }
-}
-
-resource privateEndpoint 'Microsoft.Network/privateEndpoints@2024-01-01' = {
-  name: '${containerRegistry.name}-endpoint'
-  location: location
-  tags: tags
-  properties: {
-    subnet: {
-      id: privateEndpointSubnetId
-    }
-    privateLinkServiceConnections: [
-      {
-        name: '${containerRegistry.name}-connection'
-        properties: {
-          privateLinkServiceId: containerRegistry.id
-          groupIds: [
-            'registry'
-          ]
-        }
-      }
-    ]
-  }
-
-  resource link 'privateDnsZoneGroups' = if (linkPrivateEndpointToPrivateDns) {
-    name: 'default'
-    properties: {
-      privateDnsZoneConfigs: [
-        {
-          name: 'config'
-          properties: {
-            privateDnsZoneId: privateDnsZone.id
-          }
-        }
-      ]
-    }
-  }
-}
-
-resource privateDnsZone 'Microsoft.Network/privateDnsZones@2024-06-01' existing = if(linkPrivateEndpointToPrivateDns) {
-  scope: resourceGroup(privateDnsZoneResourceGroup)
-  name: 'privatelink${environment().suffixes.acrLoginServer}'
 }
 
 output loginServer string = containerRegistry.properties.loginServer
