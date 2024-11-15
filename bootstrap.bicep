@@ -18,7 +18,7 @@ module vault 'modules/security/vault.bicep' = {
   name: 'keyvault'
   params: {
     tags: tags
-    keyVaultName: '${abbrs.keyVaultVaults}${resourceToken}'    
+    keyVaultName: '${abbrs.keyVaultVaults}${resourceToken}'
   }
 }
 
@@ -31,5 +31,29 @@ module monitoring 'modules/monitor/monitoring.bicep' = {
     logAnalyticsName: '${abbrs.operationalInsightsWorkspaces}${resourceToken}'
     applicationInsightsName: '${abbrs.insightsComponents}${resourceToken}'
     applicationInsightsDashboardName: '${abbrs.portalDashboards}${resourceToken}'
+  }
+}
+
+module storage 'modules/storage/storage-account.bicep' = {
+  name: 'storage'
+  params: {
+    name: '${abbrs.storageStorageAccounts}${resourceToken}'
+    tags: tags
+    publicNetworkAccess: 'Disabled'
+    keyVaultName: vault.outputs.keyVaultName
+    deleteRetentionPolicy: {
+      enabled: true
+      days: 2
+    }
+  }
+}
+
+module openAi 'modules/ai/cognitiveservices.bicep' = {
+  name: 'openai'
+  params: {
+    name: '${abbrs.cognitiveServicesAccounts}aoai-${resourceToken}'
+    tags: tags
+    keyVaultName: vault.outputs.keyVaultName
+    kind: 'OpenAI'    
   }
 }
