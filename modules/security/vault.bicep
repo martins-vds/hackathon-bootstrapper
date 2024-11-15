@@ -10,10 +10,6 @@ param keyVaultSku object = {
 @description('Specifies the Azure location where the resources should be created.')
 param location string = resourceGroup().location
 
-param privateEndpointSubnetId string
-param linkPrivateEndpointToPrivateDns bool = true
-param privateDnsZoneResourceGroup string
-
 param accessPolicies keyVaultAccessPolicy[] = []
 
 param tags object = {}
@@ -48,47 +44,6 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
       }
     ]
   }
-}
-
-resource privateEndpoint 'Microsoft.Network/privateEndpoints@2024-01-01' = {
-  name: '${keyVaultName}-endpoint'
-  location: location
-  tags: tags
-  properties: {
-    subnet: {
-      id: privateEndpointSubnetId
-    }
-    privateLinkServiceConnections: [
-      {
-        name: '${keyVaultName}-connection'
-        properties: {
-          privateLinkServiceId: keyVault.id
-          groupIds: [
-            'vault'
-          ]
-        }
-      }
-    ]
-  }
-
-  resource link 'privateDnsZoneGroups' = if (linkPrivateEndpointToPrivateDns) {
-    name: 'default'
-    properties: {
-      privateDnsZoneConfigs: [
-        {
-          name: 'config'
-          properties: {
-            privateDnsZoneId: privateDnsZone.id
-          }
-        }
-      ]
-    }
-  }
-}
-
-resource privateDnsZone 'Microsoft.Network/privateDnsZones@2024-06-01' existing = if(linkPrivateEndpointToPrivateDns) {
-  scope: resourceGroup(privateDnsZoneResourceGroup)
-  name: 'privatelink.vaultcore.azure.net'
 }
 
 output keyVaultName string = keyVault.name
