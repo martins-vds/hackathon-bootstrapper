@@ -10,6 +10,12 @@ param keyVaultSku object = {
 @description('Specifies the Azure location where the resources should be created.')
 param location string = resourceGroup().location
 
+@allowed([
+  'Disabled'
+  'Allowed'
+])
+param publicNetworkAccess string = 'Disabled'
+
 param accessPolicies keyVaultAccessPolicy[] = []
 
 param tags object = {}
@@ -31,10 +37,10 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
     enableRbacAuthorization: true
     tenantId: tenant().tenantId
     sku: keyVaultSku
-    publicNetworkAccess: 'Disabled'
+    publicNetworkAccess: publicNetworkAccess
     networkAcls: {
       bypass: 'AzureServices'
-      defaultAction: 'Deny'
+      defaultAction: publicNetworkAccess == 'Allowed' ? 'Allow' : 'Deny'
     }
     accessPolicies: [
       for policy in accessPolicies: {
