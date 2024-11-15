@@ -5,23 +5,19 @@ param hackName string
 
 @minLength(1)
 @description('Primary location for all resources')
-param location string
+param location string = resourceGroup().location
 
-param identities identity[] = []
+@description('Principal Ids for each hackathon team')
+param teamPrincipalIds principalId[] = []
 
 param tags object = {}
 
-type identity = {
-  principalId : string
-  principalType: 'User' | 'ServicePrincipal' | 'Group'
-}
+type principalId = string
 
 var abbrs = loadJsonContent('abbreviations.json')
 var roles = loadJsonContent('azure_roles.json')
 
 var resourceToken = toLower(uniqueString(subscription().id, hackName, location))
-
-var principalIds = map(identities, i => i.principalId)
 
 module vault 'modules/security/vault.bicep' = {
   name: 'keyvault'
@@ -84,7 +80,7 @@ module cosmos 'modules/database/cosmos/cosmos-account.bicep' = {
     databaseName: '${abbrs.sqlServersDatabases}${resourceToken}'
     location: location
     tags: tags
-    principalIds: principalIds
+    principalIds: teamPrincipalIds
     kind: 'GlobalDocumentDB'
     keyVaultName: vault.outputs.keyVaultName
   }
@@ -95,6 +91,26 @@ module formRecognizer 'modules/ai/cognitiveservices.bicep' = {
   params: {
     name: '${abbrs.cognitiveServicesFormRecognizer}${resourceToken}'
     kind: 'FormRecognizer'
+    tags: tags    
+    keyVaultName: vault.outputs.keyVaultName
+  }
+}
+
+module computerVision 'modules/ai/cognitiveservices.bicep' = {
+  name: 'computerVision'
+  params: {
+    name: '${abbrs.cognitiveServicesAccounts}vision-${resourceToken}'
+    kind: 'ComputerVision'
+    tags: tags    
+    keyVaultName: vault.outputs.keyVaultName
+  }
+}
+
+module speechServices 'modules/ai/cognitiveservices.bicep' = {
+  name: 'speechServices'
+  params: {
+    name: '${abbrs.cognitiveServicesAccounts}speech-${resourceToken}'
+    kind: 'SpeechServices'
     tags: tags    
     keyVaultName: vault.outputs.keyVaultName
   }
@@ -140,4 +156,18 @@ module azureFunction 'modules/host/function.bicep' = {
     storageAccountName: '${abbrs.storageStorageAccounts}function${resourceToken}'
     applicationInsightsName: monitoring.outputs.applicationInsightsName
   }    
+}
+
+module searchService 'modules/search/search-services.bicep' = {
+  name: 'search-service'
+  params: {
+    name: '${abbrs.searchSearchServices}${resourceToken}'
+    tags: tags
+    authOptions: {
+      aadOrApiKey: {
+        aadAuthFailureMode: 'http401WithBearerChallenge'
+      }
+    }
+    keyVaultName: vault.outputs.keyVaultName
+  }
 }
