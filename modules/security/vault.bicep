@@ -14,7 +14,7 @@ param location string = resourceGroup().location
   'Disabled'
   'Enabled'
 ])
-param publicNetworkAccess string = 'Disabled'
+param publicNetworkAccess string = 'Enabled'
 
 param accessPolicies keyVaultAccessPolicy[] = []
 
