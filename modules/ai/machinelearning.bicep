@@ -1,7 +1,7 @@
 param workspaceName string
 param location string = resourceGroup().location
-param keyVaultName string
-param applicationInsightsName string
+param keyVaultId string
+param applicationInsightsId string
 param teamObjectIds array = []
 param tags object = {}
 
@@ -11,8 +11,8 @@ resource workspace 'Microsoft.MachineLearningServices/workspaces@2024-04-01' = {
   tags: tags
   properties: {
     friendlyName: workspaceName
-    keyVault: keyVaultName
-    applicationInsights: applicationInsightsName
+    keyVault: keyVaultId
+    applicationInsights: applicationInsightsId
   }
 
   resource compute 'computes' = [

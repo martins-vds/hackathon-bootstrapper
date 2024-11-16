@@ -196,8 +196,8 @@ module searchService 'modules/search/search-services.bicep' = [
 module mlWorkspace 'modules/ai/machinelearning.bicep' = {
   name: 'machine-learning-workspace'
   params: {
-    applicationInsightsName: monitoring.outputs.applicationInsightsName
-    keyVaultName: vault.outputs.keyVaultName
+    applicationInsightsId: monitoring.outputs.applicationInsightsId
+    keyVaultId: vault.outputs.id
     workspaceName: '${abbrs.machineLearningServicesWorkspaces}${resourceToken}'
     teamObjectIds: teamObjectIds
   }
