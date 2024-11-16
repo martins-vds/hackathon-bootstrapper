@@ -192,3 +192,13 @@ module searchService 'modules/search/search-services.bicep' = [
     }
   }
 ]
+
+module mlWorkspace 'modules/ai/machinelearning.bicep' = {
+  name: 'machine-learning-workspace'
+  params: {
+    applicationInsightsName: monitoring.outputs.applicationInsightsName
+    keyVaultName: vault.outputs.keyVaultName
+    workspaceName: '${abbrs.machineLearningServicesWorkspaces}${resourceToken}'
+    teamObjectIds: teamObjectIds
+  }
+}
