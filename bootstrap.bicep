@@ -12,6 +12,8 @@ param teamObjectIds objectId[] = []
 
 param tags object = {}
 
+param workspaceComputeVmSize string = 'Standard_D2s_v3'
+
 type objectId = string
 
 var abbrs = loadJsonContent('abbreviations.json')
@@ -199,6 +201,8 @@ module mlWorkspace 'modules/ai/machinelearning.bicep' = {
     applicationInsightsId: monitoring.outputs.applicationInsightsId
     keyVaultId: vault.outputs.id
     workspaceName: '${abbrs.machineLearningServicesWorkspaces}${resourceToken}'
+    workspaceStorageName: '${abbrs.storageStorageAccounts}mlw${resourceToken}'
+    workspaceComputeVmSize: workspaceComputeVmSize
     teamObjectIds: teamObjectIds
   }
 }

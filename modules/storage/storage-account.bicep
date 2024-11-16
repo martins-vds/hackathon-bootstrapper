@@ -42,7 +42,8 @@ resource storage 'Microsoft.Storage/storageAccounts@2023-05-01' = {
       virtualNetworkRules: virtualNetworkRules
       defaultAction: publicNetworkAccess == 'Enabled' ? 'Allow' : 'Deny'
     }
-    publicNetworkAccess: empty(virtualNetworkRules) ? publicNetworkAccess : 'Enabled'
+    publicNetworkAccess: empty(virtualNetworkRules) ? publicNetworkAccess : 'Enabled'    
+    supportsHttpsTrafficOnly: true
   }
 
   resource blobServices 'blobServices' = if (!empty(containers)) {
@@ -91,5 +92,6 @@ module connectionStringSecret '../security/vault-secret.bicep' = if (!empty(keyV
 }
 
 output name string = storage.name
+output id string = storage.id
 output primaryEndpoints object = storage.properties.primaryEndpoints
 output connectionStringSecretUri string = empty(keyVaultName) ? '' : connectionStringSecret.outputs.secretUri
