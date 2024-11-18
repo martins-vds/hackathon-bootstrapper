@@ -101,7 +101,7 @@ Write-Host "Retrieving team members..."
 $hackathonTeamMembers = @()
 
 foreach ($hackathonTeam in $hackathonTeams) {
-    $hackathonTeamMembers += az ad group member list --group $hackathonTeam.objectId --query [].userPrincipalName -o tsv
+    $hackathonTeamMembers += az ad group member list --group $hackathonTeam.objectId --query [].id -o tsv
 }
 
 $hackathonTeamMembers = $hackathonTeamMembers | Sort-Object -Unique
