@@ -64,7 +64,7 @@ function LoadTeamsCsv ($Path) {
 
     if ($columns -notcontains "name" -or $columns -notcontains "objectId") {
         Write-Host $content
-        throw "The HackathonTeamsFile must have the following columns: name, objectId"
+        throw "The csv file '$($Path)' must contain columns 'name' and 'objectId'."
     }
 
     $content | ConvertFrom-Csv
