@@ -34,12 +34,12 @@ resource workspace 'Microsoft.MachineLearningServices/workspaces@2024-04-01' = {
 
   resource compute 'computes' = [
     for (principalId, index) in workspaceComputeUsers: {
-      name: 'computeteam${index}'
+      name: 'hackusercompute${index}'
       location: location
       properties: {
         computeType: 'ComputeInstance'
         computeLocation: location        
-        description: 'Compute instance for team ${index}'
+        description: 'Compute instance for team member ${take(principalId, 8)}...'
         properties: {        
           vmSize: workspaceComputeVmSize
           personalComputeInstanceSettings: {
