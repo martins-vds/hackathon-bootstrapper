@@ -14,11 +14,11 @@ param tags object = {}
 module storage '../storage/storage-account.bicep' = {
   name: 'workspace-storage'
   params: {
-    name: workspaceStorageName    
+    name: workspaceStorageName
   }
 }
 
-resource workspace 'Microsoft.MachineLearningServices/workspaces@2024-04-01' = {
+resource workspace 'Microsoft.MachineLearningServices/workspaces@2024-04-01-preview' = {
   name: workspaceName
   location: location
   identity: {
@@ -38,17 +38,18 @@ resource workspace 'Microsoft.MachineLearningServices/workspaces@2024-04-01' = {
       location: location
       properties: {
         computeType: 'ComputeInstance'
-        computeLocation: location        
+        computeLocation: location
         description: 'Compute instance for team member ${take(principalId, 8)}...'
-        properties: {        
+        properties: {
           vmSize: workspaceComputeVmSize
           personalComputeInstanceSettings: {
             assignedUser: {
               objectId: principalId
               tenantId: subscription().tenantId
-            }            
+            }
           }
-          enableNodePublicIp: true          
+          enableNodePublicIp: true
+          idleTimeBeforeShutdown: 'PT30M'          
         }
       }
     }
