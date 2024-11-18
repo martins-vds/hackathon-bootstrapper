@@ -10,7 +10,7 @@ var flattenedPrincipalRoles = flatten(principalRolesMapping)
 module roleAssignment 'role.bicep' = [
   for principalRoleMapping in flattenedPrincipalRoles: {
     name: 'role-assignment-${uniqueString(principalRoleMapping.principalId, principalRoleMapping.role)}'
-    params: {
+    params: {      
       principalId: principalRoleMapping.principalId
       roleDefinitionId: principalRoleMapping.role
       principalType: 'Group'
