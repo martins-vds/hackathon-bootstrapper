@@ -8,7 +8,7 @@ param workspaceComputeVmSize string = 'Standard_A2_v2'
 param location string = resourceGroup().location
 param keyVaultId string
 param applicationInsightsId string
-param teamObjectIds array = []
+param workspaceComputeUsers array = []
 param tags object = {}
 
 module storage '../storage/storage-account.bicep' = {
@@ -33,7 +33,7 @@ resource workspace 'Microsoft.MachineLearningServices/workspaces@2024-04-01' = {
   }
 
   resource compute 'computes' = [
-    for (principalId, index) in teamObjectIds: {
+    for (principalId, index) in workspaceComputeUsers: {
       name: 'computeteam${index}'
       location: location
       properties: {
