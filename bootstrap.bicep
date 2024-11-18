@@ -12,7 +12,11 @@ param teamObjectIds objectId[] = []
 
 param tags object = {}
 
-param workspaceComputeVmSize string = 'Standard_D2s_v3'
+@allowed([
+  'Standard_A2_v2'
+  'Standard_D2s_v3'
+])
+param workspaceComputeVmSize string = 'Standard_A2_v2'
 
 type objectId = string
 
@@ -204,5 +208,40 @@ module mlWorkspace 'modules/ai/machinelearning.bicep' = {
     workspaceStorageName: '${abbrs.storageStorageAccounts}mlw${resourceToken}'
     workspaceComputeVmSize: workspaceComputeVmSize
     teamObjectIds: teamObjectIds
+  }
+}
+
+module rbca 'modules/security/rbac.bicep' = {
+  name: 'role-assignment'
+  params: {
+    principalIds: teamObjectIds
+    roles: [
+      roles.AcrDelete
+      roles.AcrPull
+      roles.AcrPush
+      roles.ApplicationInsightsComponentContributor
+      roles.AzureEventHubsDataOwner
+      roles.AzureMLDataScientist
+      roles.CognitiveServicesContributor
+      roles.CognitiveServicesCustomVisionContributor
+      roles.CognitiveServicesCustomVisionDeployment
+      roles.CognitiveServicesOpenAIContributor
+      roles.CosmosDBOperator
+      roles.DocumentDBAccountContributor
+      roles.KeyVaultAdministrator
+      roles.KeyVaultCertificateUser
+      roles.KeyVaultCryptoUser
+      roles.KeyVaultSecretsUser
+      roles.MonitoringContributor
+      roles.SearchIndexDataContributor
+      roles.SearchServiceContributor
+      roles.StorageAccountContributor
+      roles.StorageBlobDataOwner
+      roles.StorageFileDataPrivilegedContributor
+      roles.StorageQueueDataContributor
+      roles.StorageTableDataContributor
+      roles.WebPlanContributor
+      roles.WebsiteContributor      
+    ]
   }
 }
